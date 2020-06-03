@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-source ../dap-service.config
+source ../../dap-service.config
 
 set -x
 sed -e "s#{{ ACCOUNT_USERNAME }}#$ACCOUNT_USERNAME#g"		\
