@@ -1,0 +1,20 @@
+---
+# This policy whitelists the service account identity for the 
+# application example that uses the authenticator running as
+# an init container. It annotates the host identity w/ k8s attributes
+# and grants it roles to authenticate and access to secrets.
+
+- !host
+  id: app-example-init-{{ APP_NAMESPACE_NAME }}					# identity name
+  annotations:
+    authn-k8s/namespace: {{ APP_NAMESPACE_NAME }}					# namespace it runs in
+    authn-k8s/service-account: app-example-init			# namespace SA it runs as
+    authn-k8s/authentication-container-name: authenticator	# name of authenticator container in pod
+
+# Grant authn-k8s & safe access roles to app identity
+- !grant
+  roles:
+  - !group conjur/authn-k8s/{{ CLUSTER_AUTHN_ID }}/consumers			# group w/ authentication permissions in cluster
+  - !group {{ SECRETS_ACCESS_ROLE }} 		# group role w/ access to secrets in safe
+  members:
+  - !host app-example-init-{{ APP_NAMESPACE_NAME }}

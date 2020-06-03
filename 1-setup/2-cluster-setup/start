@@ -1,0 +1,5 @@
+#!/bin/bash
+./0-namespace-init.sh
+./1-follower-deploy.sh
+./2-mysqldb-deploy.sh
+./3-tag-push-app-images.sh
