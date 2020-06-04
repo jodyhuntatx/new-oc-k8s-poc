@@ -28,7 +28,7 @@ clean_user_labs() {
   do
     uname=$(echo user${unum})
 
-    $CLI delete -f $uname-manifest.yaml -n $uname --ignore-not-found
+    $CLI delete -f ./manifests/$uname-manifest.yaml -n $uname --ignore-not-found
     rm -f ./manifests/$uname-manifest.yaml > /dev/null
     $CLI delete ns $uname
 
