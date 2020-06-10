@@ -64,7 +64,7 @@ rules:
   verbs: ["get", "list"]
 
 ---
-# Grant namespace admin role to user {{ CYBERARK_ADMIN_NAME }}
+# Grant namespace admin role to user {{ CYBERARK_NAMESPACE_ADMIN }}
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:

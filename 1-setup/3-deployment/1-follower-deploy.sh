@@ -10,10 +10,10 @@ main() {
   if [[ "$1" == "clean" ]]; then
     exit 0
   fi
-
-  initialize_verify_k8s_api_secrets
+  mkdir -p ./manifests
+  initialize_k8s_api_secrets
+  verify_k8s_api_secrets 
   create_configmaps
-  tag_and_push_follower_images
   deploy_follower
 }
 
@@ -26,7 +26,7 @@ clean_follower() {
 }
 
 ########################
-initialize_verify_k8s_api_secrets() {
+initialize_k8s_api_secrets() {
   SA_TOKEN_NAME="$($CLI get secrets -n $CYBERARK_NAMESPACE_NAME \
     | grep "dap-authn-service.*service-account-token" \
     | head -n1 \
@@ -56,9 +56,11 @@ initialize_verify_k8s_api_secrets() {
   ../../get_set.sh set \
     conjur/authn-k8s/$CLUSTER_AUTHN_ID/kubernetes/api-url \
     "$($CLI config view --minify -o yaml | grep server | awk '{print $2}')"
+}
 
-  echo
-  echo "Validating K8s API values." 
+########################
+verify_k8s_api_secrets() {
+  echo "Verifying K8s API values." 
   echo
   echo "Get k8s cert..."
   echo "$(../../get_set.sh get conjur/authn-k8s/$CLUSTER_AUTHN_ID/kubernetes/ca-cert)" > k8s.crt
@@ -133,18 +135,6 @@ EOF
     | sed -e "s#{{ CONJUR_AUTHENTICATORS }}#$CONJUR_AUTHENTICATORS#g" 	\
     > ./manifests/follower-cm-manifest.yaml
   $CLI apply -f ./manifests/follower-cm-manifest.yaml -n $CYBERARK_NAMESPACE_NAME
-}
-
-########################
-# Login to registry, tag and push appliance and seed-fetcher images
-tag_and_push_follower_images() {
-  if [[ "$PLATFORM" == "openshift" ]]; then
-    docker login -u $($CLI whoami) -p $($CLI whoami -t) $EXTERNAL_REGISTRY_URL
-  fi
-  docker tag $LOCAL_SEED_FETCHER_IMAGE $PUSH_SEED_FETCHER_IMAGE
-  docker tag $LOCAL_APPLIANCE_IMAGE $PUSH_APPLIANCE_IMAGE
-  docker push $PUSH_SEED_FETCHER_IMAGE
-  docker push $PUSH_APPLIANCE_IMAGE
 }
 
 ########################
