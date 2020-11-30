@@ -1,0 +1,22 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: db-client
+  name: db-client
+spec:
+  containers:
+  - image: {{ APP_IMAGE }}
+    imagePullPolicy: Always
+    name: test-app
+    env:
+      - name: DB_URL
+        value: {{ DB_URL }}
+    resources:
+      requests:
+        cpu: "300m"
+        memory: "250Mi"
+      limits:
+        cpu: "300m"
+        memory: "250Mi"

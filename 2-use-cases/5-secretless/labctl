@@ -23,7 +23,7 @@ main() {
         deploy_app
         ;;
     e*)
-        $CLI exec -it $($CLI get pods -n $APP_NAMESPACE_NAME | grep app-example-secretless | grep Running | awk '{print $1}') bash -n $APP_NAMESPACE_NAME
+        $CLI exec -it $($CLI get pods -n $APP_NAMESPACE_NAME | grep app-example-secretless | grep Running | awk '{print $1}') -n $APP_NAMESPACE_NAME -- bash 
         ;;
     d*)
         reset_lab

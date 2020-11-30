@@ -6,7 +6,7 @@ metadata:
 data:
   FOLLOWER_HOSTNAME: conjur-follower # this should be the same value as the service name
   SEED_FILE_DIR: /tmp/seedfile
-  CONJUR_SEED_FILE_URL: https://conjur-master-mac/configuration/dev/seed/follower
-  CONJUR_AUTHN_LOGIN: host/dappoc/dap-authn-service
-  CONJUR_AUTHENTICATORS: authn-k8s/dappoc
+  CONJUR_SEED_FILE_URL: https://conjur-master-mac:1443/configuration/dev/seed/follower
+  CONJUR_AUTHN_LOGIN: host/wfpoc/dap-authn-service
+  CONJUR_AUTHENTICATORS: authn-k8s/wfpoc
 

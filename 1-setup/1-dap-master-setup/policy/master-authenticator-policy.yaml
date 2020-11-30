@@ -3,7 +3,7 @@
 # == Register the authentication service for a cluster
 # =================================================
 - !policy
-  id: conjur/authn-k8s/dappoc
+  id: conjur/authn-k8s/wfpoc
   annotations:
     description: authn-k8s defs for the DAP cluster
   body:
@@ -19,7 +19,7 @@
 
   - !webservice
     annotations:
-      description: authn service for cluster dappoc
+      description: authn service for cluster wfpoc
 
   # Hosts that can authenticate become members of the
   # `consumers` group.
@@ -37,7 +37,7 @@
 
 # Define Follower host identity for authentication service in CyberArk namespace
 - !host
-  id: dappoc/dap-authn-service
+  id: wfpoc/dap-authn-service
   annotations:
     authn-k8s/namespace: cyberark
     authn-k8s/service_account/name: dap-authn-service
@@ -48,7 +48,7 @@
 #  - execute the seed-generation webservice
 - !grant
   roles:
-  - !group conjur/authn-k8s/dappoc/consumers
+  - !group conjur/authn-k8s/wfpoc/consumers
   - !group conjur/seed-generation/consumers
   members:
-  - !host dappoc/dap-authn-service
+  - !host wfpoc/dap-authn-service

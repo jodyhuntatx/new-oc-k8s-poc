@@ -2,4 +2,4 @@
 echo "DB username is: $DB_UNAME"
 echo "DB password is: $DB_PWD"
 set -x
-mysql -h $DB_URL --ssl-mode=disable -u $DB_UNAME --password=$DB_PWD test_app
+mysql -h $DB_URL -u $DB_UNAME --password=$DB_PWD petclinic

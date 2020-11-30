@@ -12,12 +12,15 @@ spec:
   selector:
     app: conjur-follower
 ---
-apiVersion: apps/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: conjur-follower
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      app: conjur-follower
   template:
     metadata:
       labels:
@@ -34,10 +37,9 @@ spec:
         emptyDir:
           medium: Memory
 
- 
-      initContainers:
+      containers: 
       - name: authenticator
-        image: 192.168.68.116:5000/cyberark/dap-seedfetcher:latest
+        image: dap-seedfetcher:sidecar
         imagePullPolicy: IfNotPresent
         env:
 
@@ -58,6 +60,12 @@ spec:
                 fieldPath: status.podIP
 
         ## values from Conjur config map ##
+          - name: CONJUR_APPLIANCE_URL
+            valueFrom:
+              configMapKeyRef:
+                name: dap-config
+                key: CONJUR_MASTER_URL
+
           - name: AUTHENTICATOR_ID
             valueFrom:
               configMapKeyRef:
@@ -115,12 +123,18 @@ spec:
             mountPath: /run/conjur
 
  
-      containers:
       - name: conjur-appliance
-        image: 192.168.68.116:5000/cyberark/conjur-appliance:latest
+        image: conjur-appliance:11.7.0
         command: ["/tmp/seedfile/start-follower.sh"]
         imagePullPolicy: IfNotPresent
         env:
+
+          # from dap-config map
+          - name: CONJUR_MASTER_PORT
+            valueFrom:
+              configMapKeyRef:
+                name: dap-config
+                key: CONJUR_MASTER_PORT
 
           # from FOLLOWER_CONFIG_MAP
           - name: SEEDFILE_DIR
@@ -146,8 +160,8 @@ spec:
             path: /health
             port: 443
             scheme: HTTPS
-          initialDelaySeconds: 15
-          timeoutSeconds: 5
+          initialDelaySeconds: 45
+          timeoutSeconds: 10
         resources:
           requests:
             cpu: "500m"

@@ -5,7 +5,6 @@ source ../../dap-service.config
 DAP_IMAGES=(
   $LOCAL_APPLIANCE_IMAGE
   $LOCAL_CLI_IMAGE
-  $HAPROXY_IMAGE
 )
 
 DAP_BINARIES=(
@@ -21,7 +20,7 @@ DAP_RESOURCES=(
 )
 
 DAP_NODES=(
-  "$CONJUR_MASTER_HOST_NAME"
+  "$CONJUR_MASTER_HOSTNAME"
 )
 
 DAP_PORTS=(
@@ -104,7 +103,7 @@ check_ports() {
   echo "Checking for open ports:"
   all_found=true
   for port in "${DAP_PORTS[@]}"; do
-    if [[ "$(curl -skS https://$CONJUR_MASTER_HOST_NAME:$port 2>&1 | grep 'Failed to connect')" != "" ]] ; then
+    if [[ "$(curl -skS https://$CONJUR_MASTER_HOSTNAME:$port 2>&1 | grep 'Failed to connect')" != "" ]] ; then
       echo "  $node $port - Master not reachable (is it running?)"
       all_found=false
     fi

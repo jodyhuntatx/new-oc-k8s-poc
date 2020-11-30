@@ -1,0 +1,19 @@
+---
+# This policy whitelists the service account identity for the 
+# application example that uses the secrets provider for k8s.
+# It annotates the host identity w/ k8s attributes
+# and grants it roles to authenticate and access to secrets.
+
+- !host
+  id: app-example-k8ssecrets-{{ APP_NAMESPACE_NAME }}			# identity name
+  annotations:
+    authn-k8s/namespace: {{ APP_NAMESPACE_NAME }}					# namespace it runs in
+    authn-k8s/authentication-container-name: secrets-provider	
+
+# Grant authn-k8s & safe access roles to app identity
+- !grant
+  roles:
+  - !group conjur/authn-k8s/{{ CLUSTER_AUTHN_ID }}/consumers                    # group w/ authentication permissions in cluster
+  - !group {{ SECRETS_ACCESS_ROLE }}            # group role w/ access to secrets in safe
+  members:
+  - !host app-example-k8ssecrets-{{ APP_NAMESPACE_NAME }}

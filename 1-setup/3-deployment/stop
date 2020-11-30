@@ -1,0 +1,8 @@
+#!/bin/bash
+
+source ../../dap-service.config
+
+for i in $(ls ./manifests); do
+  kubectl delete -f ./manifests/$i -n $CYBERARK_NAMESPACE_NAME --ignore-not-found 
+  rm ./manifests/$i
+done

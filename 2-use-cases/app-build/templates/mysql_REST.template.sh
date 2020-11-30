@@ -29,7 +29,7 @@ main() {
   echo
 
   set -x
-  mysql -h $DB_URL --ssl-mode=disable -u $DB_UNAME --password=$DB_PWD test_app
+  mysql -h $DB_URL -u $DB_UNAME --password=$DB_PWD petclinic
 }
 
 ################

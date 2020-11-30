@@ -6,23 +6,17 @@ main() {
   if [[ "$PLATFORM" == "openshift" ]]; then
     $CLI login -u $CYBERARK_NAMESPACE_ADMIN
   fi
-  clean_follower
+  ./stop
   if [[ "$1" == "clean" ]]; then
     exit 0
   fi
   mkdir -p ./manifests
+
   initialize_k8s_api_secrets
   verify_k8s_api_secrets 
+  get_indented_certs
   create_configmaps
   deploy_follower
-}
-
-########################
-clean_follower() {
-  $CLI delete -f ./manifests/dap-cm-manifest.yaml -n $CYBERARK_NAMESPACE_NAME --ignore-not-found
-  $CLI delete -f ./manifests/follower-cm-manifest.yaml -n $CYBERARK_NAMESPACE_NAME --ignore-not-found
-  $CLI delete -f ./manifests/follower-deployment-manifest.yaml -n $CYBERARK_NAMESPACE_NAME --ignore-not-found
-  rm -f ./manifests/dap-cm-manifest.yaml ./manifests/follower-cm-manifest.yaml ./manifests/follower-deployment-manifest.yaml
 }
 
 ########################
@@ -77,36 +71,20 @@ verify_k8s_api_secrets() {
 }
 
 ########################
+get_indented_certs() {
+  cat ../1-dap-master-setup/etc/dap-master.pem \
+  | awk '{ print "    " $0 }' > master-cert.indented
+  cat ../1-dap-master-setup/etc/dap-follower.pem \
+  | awk '{ print "    " $0 }' > follower-cert.indented
+}
+
+########################
 create_configmaps() {
-
-  if $REMOTE_CONJUR_MASTER; then
-    interpreter="ssh -i $SSH_PVT_KEY $SSH_USERNAME@$CONJUR_MASTER_HOSTNAME"
-  else
-    interpreter=bash
-  fi
-
-  # get DAP Master cert & indent w/ 4 spaces
-  $interpreter <<EOF | awk '{ print "    " $0 }' > master-cert.indented
-	sudo docker exec $CONJUR_MASTER_CONTAINER_NAME \
-		cat /opt/conjur/etc/ssl/conjur.pem
-EOF
-
-  # Generate Follower cert in Master
-  $interpreter <<EOF
-	sudo docker exec $CONJUR_MASTER_CONTAINER_NAME \
-		bash -c "evoke ca issue $CONJUR_FOLLOWER_SERVICE_NAME"
-EOF
-	
-  # get DAP Follower cert & indent w/ 4 spaces
-  $interpreter <<EOF | awk '{ print "    " $0 }' > follower-cert.indented
-	sudo docker exec $CONJUR_MASTER_CONTAINER_NAME \
-		cat /opt/conjur/etc/ssl/conjur-follower.pem
-EOF
-
   # replace non-file values in configmap manifest
-  sed -e "s#{{ CONJUR_ACCOUNT }}#$CONJUR_ACCOUNT#g" 				\
-	./templates/dap-config-map-manifest.template.yaml 			\
+  cat ./templates/dap-config-map-manifest.template.yaml 			\
+    | sed -e "s#{{ CONJUR_ACCOUNT }}#$CONJUR_ACCOUNT#g" 			\
     | sed -e "s#{{ CONJUR_MASTER_HOSTNAME }}#$CONJUR_MASTER_HOSTNAME#g" 	\
+    | sed -e "s#{{ CONJUR_MASTER_PORT }}#$CONJUR_MASTER_PORT#g"		 	\
     | sed -e "s#{{ CYBERARK_NAMESPACE_NAME }}#$CYBERARK_NAMESPACE_NAME#g"	\
     | sed -e "s#{{ CLUSTER_AUTHN_ID }}#$CLUSTER_AUTHN_ID#g" 			\
     > ./temp1
@@ -128,9 +106,10 @@ EOF
   rm ./temp? ./*.indented
   $CLI apply -f ./manifests/dap-cm-manifest.yaml -n $CYBERARK_NAMESPACE_NAME
 
-  sed -e "s#{{ CONJUR_ACCOUNT }}#$CONJUR_ACCOUNT#g" 			\
-	./templates/follower-config-map-manifest.template.yaml 		\
+  cat ./templates/follower-config-map-manifest.template.yaml 		\
+    | sed -e "s#{{ CONJUR_ACCOUNT }}#$CONJUR_ACCOUNT#g" 		\
     | sed -e "s#{{ CONJUR_MASTER_HOSTNAME }}#$CONJUR_MASTER_HOSTNAME#g" \
+    | sed -e "s#{{ CONJUR_MASTER_PORT }}#$CONJUR_MASTER_PORT#g"	 	\
     | sed -e "s#{{ CLUSTER_AUTHN_ID }}#$CLUSTER_AUTHN_ID#g" 		\
     | sed -e "s#{{ CONJUR_AUTHENTICATORS }}#$CONJUR_AUTHENTICATORS#g" 	\
     > ./manifests/follower-cm-manifest.yaml
@@ -139,9 +118,9 @@ EOF
 
 ########################
 deploy_follower() {
-  sed -e "s#{{ CONJUR_SEED_FETCHER_IMAGE }}#$REGISTRY_SEED_FETCHER_IMAGE#g" 	\
+  sed -e "s#{{ CONJUR_SEEDFETCHER_IMAGE }}#$SEEDFETCHER_IMAGE#g" 	\
 	./templates/follower-deployment-manifest.template.yaml 			\
-    | sed -e "s#{{ CONJUR_APPLIANCE_IMAGE }}#$REGISTRY_APPLIANCE_IMAGE#g" 	\
+    | sed -e "s#{{ CONJUR_APPLIANCE_IMAGE }}#$APPLIANCE_IMAGE#g" 	\
     > ./manifests/follower-deployment-manifest.yaml
   $CLI apply -f ./manifests/follower-deployment-manifest.yaml -n $CYBERARK_NAMESPACE_NAME
 

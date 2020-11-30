@@ -4,14 +4,14 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: mysql-db
-  namespace: cyberark
+  namespace: {{ CYBERARK_NAMESPACE_NAME }}
 
 ---
 kind: Service
 apiVersion: v1
 metadata:
   name: mysql-db
-  namespace: cyberark
+  namespace: {{ CYBERARK_NAMESPACE_NAME }}
 spec:
   selector:
     app: mysql-db
@@ -20,7 +20,7 @@ spec:
       targetPort: 3306
 
 ---
-apiVersion: apps/v1beta1
+apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: mysql-db
@@ -39,16 +39,16 @@ spec:
       serviceAccountName: mysql-db
       containers:
       - name: mysql-db
-        image: 192.168.68.116:5000/cyberark/mysql:latest
+        image: {{ MYSQL_IMAGE_NAME }}
         imagePullPolicy: IfNotPresent
         ports:
           - containerPort: 3306
         env:
-          - name: MYSQL_RANDOM_ROOT_PASSWORD
-            value: "yes"
+          - name: MYSQL_ROOT_PASSWORD
+            value: {{ MYSQL_ROOT_PASSWORD }}
           - name: MYSQL_USER
-            value: test_app
+            value: test_user1
           - name: MYSQL_PASSWORD
-            value: UhGfMk5L
+            value: 1234wxyz
           - name: MYSQL_DATABASE
             value: test_app

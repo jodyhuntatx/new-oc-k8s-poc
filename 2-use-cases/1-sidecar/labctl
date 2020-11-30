@@ -73,7 +73,7 @@ deploy_app() {
 ########################
 # delete deployments, cm, etc.
 reset_lab() {
-  $CLI delete -f ./app-sidecar-manifest.yaml -n $APP_NAMESPACE_NAME --ignore-not-found
+  $CLI delete -f ./app-sidecar-manifest.yaml -n $APP_NAMESPACE_NAME --ignore-not-found --force=true --grace-period=0
 }
 
 main "$@"

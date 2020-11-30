@@ -55,7 +55,7 @@ master_up() {
     --volume $CONJUR_NGINX_VOLUME:/var/log/nginx \
     --restart always \
     --security-opt seccomp:unconfined \
-    $LOCAL_APPLIANCE_IMAGE 
+    $APPLIANCE_IMAGE 
 
   # Configure Conjur Master node
   echo "Configuring Conjur master..."
@@ -98,7 +98,7 @@ cli_up() {
     --security-opt seccomp:unconfined \
     --add-host "$CONJUR_MASTER_HOSTNAME:$CONJUR_MASTER_HOST_IP" \
     --entrypoint sh \
-    $LOCAL_CLI_IMAGE \
+    $CLI_IMAGE \
     -c "sleep infinity"
 
   # Initialize connection to service (create .conjurrc and conjur-xx.pem cert)

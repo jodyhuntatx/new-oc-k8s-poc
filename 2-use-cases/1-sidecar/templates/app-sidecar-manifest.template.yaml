@@ -4,7 +4,7 @@ kind: ServiceAccount
 metadata:
   name: app-example-sidecar
 ---
-apiVersion: apps/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
@@ -28,7 +28,7 @@ spec:
         name: test-app
         env:
 
-          - name: DB_URL
+          - name: DB_HOSTNAME
             value: {{ DB_URL }}
 
         # values from DAP config map
