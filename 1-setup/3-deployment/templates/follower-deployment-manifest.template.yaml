@@ -37,7 +37,7 @@ spec:
         emptyDir:
           medium: Memory
 
-      containers: 
+      initContainers: 
       - name: authenticator
         image: {{ CONJUR_SEEDFETCHER_IMAGE }}
         imagePullPolicy: IfNotPresent
@@ -123,6 +123,7 @@ spec:
             mountPath: /run/conjur
 
  
+      containers: 
       - name: conjur-appliance
         image: {{ CONJUR_APPLIANCE_IMAGE }}
         command: ["/tmp/seedfile/start-follower.sh"]

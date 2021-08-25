@@ -8,19 +8,22 @@ source ../../dap-service.config
 #   logged into the CLI as the admin user.
 
 #################
-main() {
+xxxmain() {
   ./precheck_master.sh
   ./stop
-  while [[ "$(docker ps -a | grep $CONJUR_MASTER_CONTAINER_NAME)" != "" ]]; do
+  while [[ "$($DOCKER ps -a | grep $CONJUR_MASTER_CONTAINER_NAME)" != "" ]]; do
     echo -n '.'
     sleep 3
   done
 #  configure_networking
   shared_volumes_up
   master_up
-  store_config_files_in_cache_dir
   cli_up
-#  follower_up
+}
+
+main() {
+  ./precheck_master.sh
+  store_config_files_in_cache_dir
   init_k8s_authn
   wait_till_master_is_responsive
   init_demo_secrets
@@ -38,14 +41,14 @@ configure_networking() {
 
 ############################
 shared_volumes_up() {
-  docker volume create $CONJUR_AUDIT_VOLUME
-  docker volume create $CONJUR_NGINX_VOLUME
+  $DOCKER volume create $CONJUR_AUDIT_VOLUME
+  $DOCKER volume create $CONJUR_NGINX_VOLUME
 }
 
 ############################
 master_up() {
   # Bring up Conjur Master node
-  docker run -d \
+  $DOCKER run -d \
     --name $CONJUR_MASTER_CONTAINER_NAME \
     --label role=conjur_node \
     -p "$CONJUR_MASTER_PORT:443" \
@@ -59,7 +62,7 @@ master_up() {
 
   # Configure Conjur Master node
   echo "Configuring Conjur master..."
-  docker exec $CONJUR_MASTER_CONTAINER_NAME \
+  $DOCKER exec $CONJUR_MASTER_CONTAINER_NAME \
                 evoke configure master      \
                 -h $CONJUR_MASTER_HOSTNAME \
                 -p $AUTHN_PASSWORD   \
@@ -76,22 +79,22 @@ store_config_files_in_cache_dir() {
   echo "Caching DAP Master certificate..."
   mkdir -p $CACHE_DIR
   rm -f $MASTER_CERT_FILE $FOLLOWER_CERT_FILE
-  docker cp -L $CONJUR_MASTER_CONTAINER_NAME:/opt/conjur/etc/ssl/conjur.pem $MASTER_CERT_FILE
+  $DOCKER cp -L $CONJUR_MASTER_CONTAINER_NAME:/opt/conjur/etc/ssl/conjur.pem $MASTER_CERT_FILE
 
   echo "Caching DAP Follower certificate..."
   rm -f $FOLLOWER_CERT_FILE
-  docker exec $CONJUR_MASTER_CONTAINER_NAME \
+  $DOCKER exec $CONJUR_MASTER_CONTAINER_NAME \
 	bash -c "evoke ca issue conjur-follower $CONJUR_MASTER_HOSTNAME $CONJUR_FOLLOWER_SERVICE_NAME"
-  docker cp -L $CONJUR_MASTER_CONTAINER_NAME:/opt/conjur/etc/ssl/conjur-follower.pem $FOLLOWER_CERT_FILE
+  $DOCKER cp -L $CONJUR_MASTER_CONTAINER_NAME:/opt/conjur/etc/ssl/conjur-follower.pem $FOLLOWER_CERT_FILE
 
   echo "Caching Conjur Follower seed file..."
   rm -f $FOLLOWER_SEED_FILE
-  docker exec $CONJUR_MASTER_CONTAINER_NAME evoke seed follower conjur-follower > $FOLLOWER_SEED_FILE
+  $DOCKER exec $CONJUR_MASTER_CONTAINER_NAME evoke seed follower conjur-follower > $FOLLOWER_SEED_FILE
 }
 
 ############################
 cli_up() {
-  docker run -d \
+  $DOCKER run -d \
     --name $CLI_CONTAINER_NAME \
     --label role=cli \
     --restart always \
@@ -102,18 +105,18 @@ cli_up() {
     -c "sleep infinity"
 
   # Initialize connection to service (create .conjurrc and conjur-xx.pem cert)
-  docker exec $CLI_CONTAINER_NAME \
+  $DOCKER exec $CLI_CONTAINER_NAME \
     bash -c "echo yes | conjur init -u $CONJUR_APPLIANCE_URL -a $CONJUR_ACCOUNT"
 
   # Login as admin
-  docker exec $CLI_CONTAINER_NAME \
+  $DOCKER exec $CLI_CONTAINER_NAME \
     conjur authn login -u admin -p $AUTHN_PASSWORD
 }
 
 ############################
 follower_up() {
   # Bring up Conjur Follower node
-  docker run -d \
+  $DOCKER run -d \
     --name $CONJUR_FOLLOWER_CONTAINER_NAME \
     --label role=conjur_node \
     -p "$CONJUR_FOLLOWER_PORT:443" \
@@ -124,16 +127,16 @@ follower_up() {
 
   if $NO_DNS; then
     # add entry to follower's /etc/hosts so $CONJUR_MASTER_HOSTNAME resolves
-    docker exec -it $CONJUR_FOLLOWER_CONTAINER_NAME \
+    $DOCKER exec -it $CONJUR_FOLLOWER_CONTAINER_NAME \
 	bash -c "echo \"$CONJUR_MASTER_HOST_IP $CONJUR_MASTER_HOSTNAME\" >> /etc/hosts"
   fi
 
   echo "Initializing Conjur Follower"
-  docker cp $FOLLOWER_SEED_FILE \
+  $DOCKER cp $FOLLOWER_SEED_FILE \
 		$CONJUR_FOLLOWER_CONTAINER_NAME:/tmp/follower-seed.tar
-  docker exec $CONJUR_FOLLOWER_CONTAINER_NAME \
+  $DOCKER exec $CONJUR_FOLLOWER_CONTAINER_NAME \
 		evoke unpack seed /tmp/follower-seed.tar
-  docker exec $CONJUR_FOLLOWER_CONTAINER_NAME \
+  $DOCKER exec $CONJUR_FOLLOWER_CONTAINER_NAME \
 		evoke configure follower -p $CONJUR_MASTER_PORT
 
   echo "Follower configured."
@@ -159,11 +162,11 @@ init_k8s_authn() {
   $interpreter <<EOF
 set -x
 # create CA
-sudo docker exec $CONJUR_MASTER_CONTAINER_NAME				\
+$DOCKER exec $CONJUR_MASTER_CONTAINER_NAME				\
 	chpst -u conjur conjur-plugin-service possum 			\
         rake authn_k8s:ca_init["conjur/authn-k8s/$CLUSTER_AUTHN_ID"]
 
-sudo docker exec $CONJUR_MASTER_CONTAINER_NAME				\
+$DOCKER exec $CONJUR_MASTER_CONTAINER_NAME				\
 	evoke variable set CONJUR_AUTHENTICATORS authn-k8s/$CLUSTER_AUTHN_ID
 EOF
 
