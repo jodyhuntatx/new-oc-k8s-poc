@@ -8,7 +8,7 @@ source ../../dap-service.config
 #   logged into the CLI as the admin user.
 
 #################
-xxxmain() {
+main() {
   ./precheck_master.sh
   ./stop
   while [[ "$($DOCKER ps -a | grep $CONJUR_MASTER_CONTAINER_NAME)" != "" ]]; do
@@ -19,10 +19,6 @@ xxxmain() {
   shared_volumes_up
   master_up
   cli_up
-}
-
-main() {
-  ./precheck_master.sh
   store_config_files_in_cache_dir
   init_k8s_authn
   wait_till_master_is_responsive
